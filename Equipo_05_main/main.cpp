@@ -127,10 +127,6 @@ string cleanString(const string& str) {
     return cleaned;
 }
 
-//funcion auxiliar para convertir caracter a valor ASCII
-int charToVal(char c) {
-    return (int)c; 
-}
 
 // Función auxiliar para formatear la respuesta individual de cada búsqueda
 string checkMatch(const string& transmission, const string& mcode) {
