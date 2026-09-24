@@ -128,10 +128,6 @@ string cleanString(const string& str) {
     return cleaned;
 }
 
-//funcion auxiliar para convertir caracter a valor ASCII
-int charToVal(char c) {
-    return (int)c; 
-}
 
 // Función auxiliar para formatear la respuesta individual de cada búsqueda
 string checkMatch(const string& transmission, const string& mcode) {
@@ -169,6 +165,54 @@ string rollingHashComparison(const std::string& transmission1, const std::string
 }
 
 // === Fin Funciones Rolling Hash ===
+
+
+// === Funciones Longest Common Substring ===
+// funcion para encontrar el substring comun mas largo entre ambas transmisiones usando programacion dinamica
+// Regresa "inicio fin" (base 1) de la posicion en transmission1 y la subcadena encontrada
+string longestCommonSubstring(const std::string& transmission1, const std::string& transmission2) {
+    // Limpieza de caracteres de control (\n, \r, espacios)
+    string t1 = cleanString(transmission1);
+    string t2 = cleanString(transmission2);
+    int n = t1.length();
+    int m = t2.length();
+
+    // Solo guardamos dos filas de la matriz dp: la anterior (prev) y la actual (cur)
+    // cur[j] = longitud del substring comun que TERMINA en t1[i-1] y t2[j-1]
+    vector<int> prev(m + 1, 0), cur(m + 1, 0);
+    int maxLen = 0; // longitud del substring comun mas largo encontrado
+    int endPos = 0; // posicion (base 1) en t1 donde termina ese substring
+
+    // Llenado de la tabla fila por fila
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= m; j++) {
+            if (t1[i - 1] == t2[j - 1]) {
+                // Coinciden: extendemos la racha de la diagonal (arriba-izquierda)
+                cur[j] = prev[j - 1] + 1;
+                // Actulizar MaxLen y endPos si encontramos un subtring comun mas largo
+                if (cur[j] > maxLen) {
+                    maxLen = cur[j];
+                    endPos = i;
+                }
+            } else {
+                cur[j] = 0; // No coinciden: la racha se rompe
+            }
+        }
+        // La fila actual pasa a ser la anterior para la siguiente iteracion
+        swap(prev, cur);
+    }
+
+    if (maxLen == 0) {
+        return "No se encontro subcadena comun\n";
+    }
+
+    // El inicio se deduce restando la longitud al final
+    int startPos = endPos - maxLen + 1;
+    // Extraemos la subcadena comun mas larga de t1
+    string substringComun = t1.substr(endPos - maxLen, maxLen);
+    return  "Posicion Incial: "+ to_string(startPos) + " Posicion Final: " + to_string(endPos) + "\n"
+          + "Subcadena mas larga: " + substringComun + " (longitud: " + to_string(maxLen) + ")\n";
+}
 
 
 // funcion auxiliar para cargar archivos a un string
@@ -337,7 +381,7 @@ int main(){
     // Calcula TODO primero
     std::string resultado1 = rollingHashComparison(transmission1, transmission2, mcode1, mcode2, mcode3);
     std::string resultado2 = codigoEspejeado(transmission1, transmission2, transmission11, transmission12);
-    std::string resultado3;
+    std::string resultado3 = longestCommonSubstring(transmission1, transmission2);
 
     printProjectReport(resultado1, resultado2, resultado3);
     
