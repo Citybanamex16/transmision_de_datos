@@ -7,7 +7,7 @@
 #include <filesystem> // librería para obtener la ruta de ejecución del programa
 #include <cstdint>
 
-using namespace std;
+
 
 
 
@@ -21,6 +21,7 @@ using namespace std;
     #include <unistd.h> // Para Linux
 #endif
 
+using namespace std;
 // Función inteligente que reubica el programa en su propia carpeta física
 void autoLocalizarDirectorio() {
     try {
@@ -263,25 +264,126 @@ void printProjectReport(const string& res1, const string& res2, const string& re
     cout << "========================================" << endl;
 }
 
+// === Funciones Palindromo Mas largo ===
+// Que hace: se encuentra el palindromo más largo de carácteres dentro de cada archivo de transmision
+// Input: string 
+// Output: linea por archivo de transmision con posicion incial y posicion final del palindromo mas largo encontrado
+/* Manacher (palindromo mas largo)
+Definicion: Un palindromo es una cadena que se lee igual de izquierda a derecha y viseversa
+Ruta 1 (mas compleja en tiempo O(N^3)): Tomar la letra inical y la longitud de la palabra, verificando si realmente es un palindromo
+Ruta 2 (menos compleja en tiempo O(N^2)): Fijar el centro de una palabra y expandir ambos lados, aumentando el contador cada vez que coincidan dos letras
+Ruta 3 (Manacher O(N)):
+* Paso 1: Se construye una nueva cadena T, agregando un carácter especial en medio de cada caracter de la cadena original. También Uno al inicio y Uno al final
+* Paso 2: El carácter agregado puede ser cualquiera que no pertenezca al alfabeto de la cadena analizado
+* Paso 3: El valor en la posicion i del arreglo indica la longitud en numero de caracteres
+* Paso 4: */
+
+//Paso 1: string -> al nuevo vector combinado
+vector<string> construirVector (string texto){
+    //Creamos nuestro vector donde vamos almacenar nuestra palabra combinada con diferentes caracteres
+    vector<string> mancher;
+    string relleno = "|";
+    for (int i = 0; i < texto.length(); i++){
+        mancher.push_back("|");
+        mancher.push_back(string (1, texto[i]));
+    }
+    mancher.push_back("|");
+    return mancher;
+}
+
+//Paso 2: string -> al nuevo vector combinado
+pair<int, int> palindromoLargo (const string& texto){
+    vector<string> palindromoInicial = construirVector(texto);
+    int n = palindromoInicial.size();
+    
+    //Rellenamos los palindromos con ceros
+    vector<int> radios(n, 0);
+    //Inicializamos centro, derecha
+    int center = 0;
+    int right = 0;
+
+    for (int i = 0; i < n; i++){
+        //el valor espejo que se busca
+        int espejo = 2 * center - i;
+
+        //Si i esta dentro del rango, reciclamos el espejo
+        if (i < right) {
+            radios[i] = min(right - i, radios[espejo]);
+        }
+
+        // expandemos el palindromo caracter por caracter
+        while (i - radios[i] - 1 >= 0 && i + radios[i] + 1 < n &&
+               palindromoInicial[i - radios[i] - 1] == palindromoInicial[i + radios[i] + 1]) {
+            radios[i]++;
+        }
+
+        //Si arrebaza la derecha, entonces regresamos al centro
+        if (i + radios[i] > right) {
+            center = i;
+            right = i + radios[i];
+        }
+    }
+
+    //Buscamos la posicion con el radio mas grande, para encontrar el palindromo
+    int maxRadio = 0, centerIndex = 0;
+    for (int i = 0; i < n; i++) {
+        if (radios[i] > maxRadio) {
+            maxRadio = radios[i];
+            centerIndex = i;
+        }
+    }
+
+    //Convierte la posicion en el palindromo que buscamos
+    int inicio = (centerIndex - maxRadio) / 2;
+    int fin = inicio + maxRadio - 1;
+
+    return {inicio, fin};
+}
+// === Fin Funciones Palindromo Mas largo ===
+
+// === Funcion para imprimir resultado ===
+// Función que arma el resultado final de la Parte 2 para ambas transmisiones
+string codigoEspejeado(const string& transmission1, const string& transmission2, const string& transmission11, const string& transmission12) {
+    //Limpiamos los caracteres
+    string t1 = cleanString(transmission1);
+    string t2 = cleanString(transmission2);
+    string t3 = cleanString(transmission11);
+    string t4 = cleanString(transmission12);
+
+    string resultado = "";
+
+    //Hacemos un vector de transmisiones
+    vector<string> transmissions = {t1, t2, t3, t4};
+
+    //Para cada transmision encontramos su palindromo
+    for (const string& transmission : transmissions) {
+        pair<int, int> pos = palindromoLargo(transmission);
+        //Se suma uno debido a la formula
+        resultado += to_string(pos.first + 1) + " " + to_string(pos.second + 1) + "\n";
+    }
+
+    return resultado;
+}
+
+
+
 int main(){
+    autoLocalizarDirectorio();
 
-    autoLocalizarDirectorio(); // Llamada a la función de autolocalización
-
-    //Paso 1: Apertura de archivos en strings con validación estricta
     string transmission1 = readFileToString("transmission01.txt");
     string transmission2 = readFileToString("transmission02.txt");
+    string transmission11 = readFileToString("transmission11.txt");
+    string transmission12 = readFileToString("transmission12.txt");
     string mcode1 = readFileToString("mcode01.txt");
     string mcode2 = readFileToString("mcode02.txt");
     string mcode3 = readFileToString("mcode03.txt");
 
-    //Paso 2: llamadas a funciones (Aqui llamen a sus respecivas funciones y regresen sus resultados a variables string)
-    std::string resultado1 = rollingHashComparison(transmission1,transmission2,mcode1,mcode2,mcode3);
-    std::string resultado2;
+    // Calcula TODO primero
+    std::string resultado1 = rollingHashComparison(transmission1, transmission2, mcode1, mcode2, mcode3);
+    std::string resultado2 = codigoEspejeado(transmission1, transmission2, transmission11, transmission12);
     std::string resultado3 = longestCommonSubstring(transmission1, transmission2);
 
-
-
     printProjectReport(resultado1, resultado2, resultado3);
-
-    return 0; 
+    
+    return 0;
 }
